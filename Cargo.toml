@@ -1,5 +1,5 @@
 [package]
-name = "scripting_language"
+name = "kody"
 version = "0.1.0"
 authors = ["Sampo Siitonen <sampo.siitonen@outlook.com>"]
 edition = "2018"
