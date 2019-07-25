@@ -1,0 +1,13 @@
+# This is a complete program that should work
+main = (x, y, max_i){
+    i = 0;
+    while i < max_i {
+        i += 1;
+        print(x);
+        tmp = x + y;
+        x = y;
+        y = tmp;
+    }
+}
+
+main(0, 1, 10)

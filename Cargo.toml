@@ -1,0 +1,7 @@
+[package]
+name = "scripting_language"
+version = "0.1.0"
+authors = ["Sampo Siitonen <sampo.siitonen@outlook.com>"]
+edition = "2018"
+
+[dependencies]
