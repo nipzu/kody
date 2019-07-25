@@ -1,4 +1,4 @@
-use scripting_language::{handle_error, run};
+use kody::{handle_error, run};
 
 fn main() {
     if let Err(error) = run() {
