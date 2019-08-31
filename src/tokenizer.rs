@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Token {
     Identifier(String),
     Number(String),
@@ -15,21 +15,31 @@ pub enum Token {
     CloseParentheses,
     OpenBraces,
     CloseBraces,
-    OpenBrackets,
-    CloseBrackets,
-    Assignment,
+    If,
+    Else,
+    While,
+    And,
+    Or,
+    Not,
+    True,
+    False,
+    Return,
+    Assign,
+    FunctionDef,
     Equals,
+    NotEqual,
     GreaterThan,
     LessThan,
     GreaterThanOrEqual,
     LessThanOrEqual,
-    EndOfLine,
     MemberAcces,
     Separator,
     Empty,
 }
 
-pub fn tokenize(filedata: &String) -> Result<Vec<Token>, String> {
+
+// TODO make better (skip_while)
+pub fn tokenize(filedata: &str) -> Result<Vec<Token>, String> {
     let mut characters = filedata.chars();
 
     let mut tokens = vec![];
@@ -38,24 +48,38 @@ pub fn tokenize(filedata: &String) -> Result<Vec<Token>, String> {
     while let Some(character) = next_char {
         next_char = characters.next();
         let token = match character {
-            '_' | 'A'...'Z' | 'a'...'z' => {
+            '_' | 'A'..='Z' | 'a'..='z' => {
                 let mut data = character.to_string();
                 while match next_char.unwrap_or(' ') {
-                    '_' | 'A'...'Z' | 'a'...'z' | '0'...'9' => true,
+                    '_' | 'A'..='Z' | 'a'..='z' | '0'..='9' => true,
                     _ => false,
                 } {
                     data.push(next_char.unwrap());
                     next_char = characters.next();
                 }
-                Token::Identifier(data)
+                match data.as_str() {
+                    "if" => Token::If,
+                    "else" => Token::Else,
+                    "while" => Token::While,
+                    "and" => Token::And,
+                    "or" => Token::Or,
+                    "not" => Token::Not,
+                    "true" => Token::True,
+                    "false" => Token::False,
+                    "func" => Token::FunctionDef,
+                    "return" => Token::Return,
+                    _ => Token::Identifier(data),
+                }
             }
 
-            '0'...'9' => {
+            '0'..='9' => {
                 let mut data = character.to_string();
                 let mut has_decimals = false;
                 while match next_char.unwrap_or(' ') {
-                    '_' | '0'...'9' => true,
-                    'A'...'Z' | 'a'...'z' => return Err(String::from("Found an alphabetical character in a number!")),
+                    '_' | '0'..='9' => true,
+                    'A'..='Z' | 'a'..='z' => {
+                        return Err(String::from("Found an alphabetical character in a number!"))
+                    }
                     '.' => {
                         if has_decimals {
                             return Err(String::from("Multiple decimal separators in one number!"));
@@ -71,10 +95,15 @@ pub fn tokenize(filedata: &String) -> Result<Vec<Token>, String> {
 
                 data.retain(|c| c != '_');
                 data = data.trim_matches('0').to_string();
-                if data.chars().last() == Some('.') {
+                if data.is_empty() {
                     data.push('0');
                 }
-                if data.chars().next() == Some('.') {
+
+                if data.ends_with('.') {
+                    data.push('0');
+                }
+
+                if data.starts_with('.') {
                     data.insert(0, '0');
                 }
 
@@ -131,21 +160,9 @@ pub fn tokenize(filedata: &String) -> Result<Vec<Token>, String> {
 
             '}' => Token::CloseBraces,
 
-            '[' => Token::OpenBrackets,
-
-            ']' => Token::CloseBrackets,
-
-            ';' => {
-                if *tokens.last().unwrap_or(&Token::Empty) == Token::EndOfLine {
-                    Token::Empty
-                } else {
-                    Token::EndOfLine
-                }
-            }
+            ',' => Token::Separator,
 
             '.' => Token::MemberAcces,
-
-            ',' => Token::Separator,
 
             ' ' | '\t' | '\r' | '\n' => Token::Empty,
 
@@ -165,7 +182,16 @@ pub fn tokenize(filedata: &String) -> Result<Vec<Token>, String> {
                     next_char = characters.next();
                     Token::Equals
                 } else {
-                    Token::Assignment
+                    Token::Assign
+                }
+            }
+
+            '!' => {
+                if next_char.unwrap_or(' ') == '=' {
+                    next_char = characters.next();
+                    Token::NotEqual
+                } else {
+                    return Err(String::from("Unknown token \'!\'"));
                 }
             }
 
@@ -188,10 +214,10 @@ pub fn tokenize(filedata: &String) -> Result<Vec<Token>, String> {
             }
 
             _ => {
-                return Err(String::from(format!(
+                return Err(format!(
                     "Could not match character {} to any token",
                     character
-                )));
+                ));
             }
         };
         if token != Token::Empty {
@@ -212,8 +238,9 @@ fn tokenize_string(first_char: char, characters: &mut std::str::Chars) -> Result
                 '\\' => data.push('\\'),
                 'n' => data.push('\n'),
                 '\'' => data.push('\''),
-                '\"' => data.push('\"'),
+                '"' => data.push('"'),
                 'U' => {
+                    // TODO implement unicode support
                     return Err(String::from(
                         "Unicode code point construction not yet supported!",
                     ));
@@ -221,15 +248,16 @@ fn tokenize_string(first_char: char, characters: &mut std::str::Chars) -> Result
                 '\n' => (),
                 '\0' => {
                     return Err(String::from(
-                        "Expected newline after escape character \\, found end-of-file!",
+                        "Found end-of-file after escape character \\!",
                     ));
                 }
                 _ => {
+                    // skip newline
                     while match characters.next().unwrap_or('\0') {
                         '\n' => false,
                         '\0' => {
                             return Err(String::from(
-                                "Expected any of \\, n, \', \" or U after escape character \\!"
+                                "Expected any of \\, n, \', \" or U after escape character \\!",
                             ));
                         }
                         _ => true,
@@ -255,11 +283,11 @@ mod test {
     #[test]
     fn comments() {
         assert_eq!(
-            tokenize(&String::from(
+            tokenize(
                 "# this is a test to see if the 
         #tokenizer correctly igores # comments
         +"
-            ))
+            )
             .unwrap(),
             vec![Token::Add]
         );
@@ -268,10 +296,10 @@ mod test {
     #[test]
     fn identifiers() {
         assert_eq!(
-            tokenize(&String::from("id = value")).unwrap(),
+            tokenize("id = value").unwrap(),
             vec![
                 Token::Identifier(String::from("id")),
-                Token::Assignment,
+                Token::Assign,
                 Token::Identifier(String::from("value"))
             ]
         );
@@ -280,14 +308,13 @@ mod test {
     #[test]
     fn operators() {
         assert_eq!(
-            tokenize(&String::from("+- -= / *= =")).unwrap(),
+            tokenize("+-  / * =").unwrap(),
             vec![
                 Token::Add,
                 Token::Subtract,
-                Token::SubtractAssign,
                 Token::Divide,
-                Token::MultiplyAssign,
-                Token::Assignment
+                Token::Multiply,
+                Token::Assign
             ]
         );
     }
@@ -295,7 +322,7 @@ mod test {
     #[test]
     fn numbers() {
         assert_eq!(
-            tokenize(&String::from("12, 0000_25_._300, 0.0, 2.")).unwrap(),
+            tokenize("12, 0000_25_._300, 0.0, 2., 0").unwrap(),
             vec![
                 Token::Number(String::from("12")),
                 Token::Separator,
@@ -304,16 +331,84 @@ mod test {
                 Token::Number(String::from("0.0")),
                 Token::Separator,
                 Token::Number(String::from("2.0")),
+                Token::Separator,
+                Token::Number(String::from("0")),
             ]
         );
     }
 
     #[test]
     fn errors() {
-        assert!(tokenize(&String::from("0000_.25_._300")).is_err());
-        assert!(tokenize(&String::from("12units")).is_err());
-        assert!(tokenize(&String::from("unknown symbol&")).is_err());
-        assert!(tokenize(&String::from("\" this is an unclosed string # not actually a comment")).is_err());
-        assert!(tokenize(&String::from(" \" unused \\ in a string literal \" ")).is_err());
+        assert!(tokenize("0000_.25_._300").is_err());
+        assert!(tokenize("12units").is_err());
+        assert!(tokenize("unknown symbol&").is_err());
+        assert!(tokenize("\" this is an unclosed string # not a comment").is_err());
+        assert!(tokenize(" \" unused \\ in a string literal \" ").is_err());
+    }
+
+    #[test]
+    fn member_access() {
+        assert_eq!(
+            tokenize("x.y").unwrap(),
+            vec![
+                Token::Identifier(String::from("x")),
+                Token::MemberAcces,
+                Token::Identifier(String::from("y"))
+            ]
+        );
+    }
+
+    #[test]
+    fn functions() {
+        assert_eq!(
+            tokenize(
+                "func add(x, y) {
+            return x + y
+            }"
+            )
+            .unwrap(),
+            vec![
+                Token::FunctionDef,
+                Token::Identifier(String::from("add")),
+                Token::OpenParentheses,
+                Token::Identifier(String::from("x")),
+                Token::Separator,
+                Token::Identifier(String::from("y")),
+                Token::CloseParentheses,
+                Token::OpenBraces,
+                Token::Return,
+                Token::Identifier(String::from("x")),
+                Token::Add,
+                Token::Identifier(String::from("y")),
+                Token::CloseBraces
+            ]
+        );
+    }
+
+    #[test]
+    fn logic_operators() {
+        assert_eq!(
+            tokenize(
+                "false or true and if not false 
+            true 
+        else 
+            true or false"
+            )
+            .unwrap(),
+            vec![
+                Token::False,
+                Token::Or,
+                Token::True,
+                Token::And,
+                Token::If,
+                Token::Not,
+                Token::False,
+                Token::True,
+                Token::Else,
+                Token::True,
+                Token::Or,
+                Token::False
+            ]
+        );
     }
 }
