@@ -266,6 +266,8 @@ fn identify_expressions(tokens: &[Token]) -> Result<Vec<&[Token]>, String> {
     Ok(expressions)
 }
 
+// TODO what about negative numbers?
+// FIXME, TODO this thing needs some heavy reformatting
 fn parse_expression_tokens(tokens: &[Token]) -> Result<KodyNode, String> {
     assert!(!tokens.is_empty());
 
