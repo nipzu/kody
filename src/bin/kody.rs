@@ -1,7 +1,7 @@
-use std::path::PathBuf;
 use std::env::args_os;
+use std::path::PathBuf;
 
-use kody::{Arguments, handle_error, run};
+use kody::{handle_error, run, Arguments};
 
 fn main() {
     let arguments = parse_args().unwrap_or_else(|e| handle_error(e));

@@ -1,3 +1,6 @@
+use std::iter::Peekable;
+use std::str::Chars;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Token {
     Identifier(String),
@@ -37,243 +40,196 @@ pub enum Token {
     Empty,
 }
 
-
-// TODO make better (skip_while)
 pub fn tokenize(filedata: &str) -> Result<Vec<Token>, String> {
-    let mut characters = filedata.chars();
+    let mut char_iter = filedata.chars().peekable();
 
     let mut tokens = vec![];
-    let mut next_char = characters.next();
 
-    while let Some(character) = next_char {
-        next_char = characters.next();
+    // iterate over all characters in the code
+    while let Some(character) = char_iter.next() {
         let token = match character {
-            '_' | 'A'..='Z' | 'a'..='z' => {
-                let mut data = character.to_string();
-                while match next_char.unwrap_or(' ') {
-                    '_' | 'A'..='Z' | 'a'..='z' | '0'..='9' => true,
-                    _ => false,
-                } {
-                    data.push(next_char.unwrap());
-                    next_char = characters.next();
-                }
-                match data.as_str() {
-                    "if" => Token::If,
-                    "else" => Token::Else,
-                    "while" => Token::While,
-                    "and" => Token::And,
-                    "or" => Token::Or,
-                    "not" => Token::Not,
-                    "true" => Token::True,
-                    "false" => Token::False,
-                    "func" => Token::FunctionDef,
-                    "return" => Token::Return,
-                    _ => Token::Identifier(data),
-                }
-            }
-
-            '0'..='9' => {
-                let mut data = character.to_string();
-                let mut has_decimals = false;
-                while match next_char.unwrap_or(' ') {
-                    '_' | '0'..='9' => true,
-                    'A'..='Z' | 'a'..='z' => {
-                        return Err(String::from("Found an alphabetical character in a number!"))
-                    }
-                    '.' => {
-                        if has_decimals {
-                            return Err(String::from("Multiple decimal separators in one number!"));
-                        }
-                        has_decimals = true;
-                        true
-                    }
-                    _ => false,
-                } {
-                    data.push(next_char.unwrap());
-                    next_char = characters.next();
-                }
-
-                data.retain(|c| c != '_');
-                data = data.trim_matches('0').to_string();
-                if data.is_empty() {
-                    data.push('0');
-                }
-
-                if data.ends_with('.') {
-                    data.push('0');
-                }
-
-                if data.starts_with('.') {
-                    data.insert(0, '0');
-                }
-
-                Token::Number(data)
-            }
-
-            '"' => {
-                let string_data = tokenize_string(next_char.unwrap_or('\0'), &mut characters)?;
-                next_char = characters.next();
-                string_data
-            }
-
-            '+' => {
-                if next_char == Some('=') {
-                    next_char = characters.next();
-                    Token::AddAssign
-                } else {
-                    Token::Add
-                }
-            }
-
-            '-' => {
-                if next_char == Some('=') {
-                    next_char = characters.next();
-                    Token::SubtractAssign
-                } else {
-                    Token::Subtract
-                }
-            }
-
-            '*' => {
-                if next_char == Some('=') {
-                    next_char = characters.next();
-                    Token::MultiplyAssign
-                } else {
-                    Token::Multiply
-                }
-            }
-
-            '/' => {
-                if next_char == Some('=') {
-                    next_char = characters.next();
-                    Token::DivideAssign
-                } else {
-                    Token::Divide
-                }
-            }
-
+            '_' | 'A'..='Z' | 'a'..='z' => tokenize_identifier(character, &mut char_iter),
+            '0'..='9' => tokenize_number(character, &mut char_iter)?,
+            '"' => tokenize_string(&mut char_iter)?,
             '(' => Token::OpenParentheses,
-
             ')' => Token::CloseParentheses,
-
             '{' => Token::OpenBraces,
-
             '}' => Token::CloseBraces,
-
             ',' => Token::Separator,
-
             '.' => Token::MemberAcces,
-
-            ' ' | '\t' | '\r' | '\n' => Token::Empty,
-
             '#' => {
-                while match next_char.unwrap_or('\n') {
-                    '\n' => false,
-                    _ => true,
-                } {
-                    next_char = characters.next();
+                // comment until the end of the line
+                for c in &mut char_iter {
+                    if c == '\n' {
+                        break;
+                    }
                 }
-                next_char = characters.next();
                 Token::Empty
             }
-
-            '=' => {
-                if next_char.unwrap_or(' ') == '=' {
-                    next_char = characters.next();
-                    Token::Equals
-                } else {
-                    Token::Assign
+            ' ' | '\t' | '\r' | '\n' => Token::Empty,
+            _ => match char_iter.peek() {
+                // check if there is a = character after the current character
+                // for example +=
+                Some(&'=') => {
+                    char_iter.next();
+                    match character {
+                        '+' => Token::AddAssign,
+                        '-' => Token::SubtractAssign,
+                        '*' => Token::MultiplyAssign,
+                        '/' => Token::DivideAssign,
+                        '=' => Token::Equals,
+                        '!' => Token::NotEqual,
+                        '<' => Token::LessThanOrEqual,
+                        '>' => Token::GreaterThanOrEqual,
+                        _ => {
+                            return Err(format!(
+                                "Could not match character {:?} to any token",
+                                character
+                            ));
+                        }
+                    }
                 }
-            }
-
-            '!' => {
-                if next_char.unwrap_or(' ') == '=' {
-                    next_char = characters.next();
-                    Token::NotEqual
-                } else {
-                    return Err(String::from("Unknown token \'!\'"));
-                }
-            }
-
-            '<' => {
-                if next_char.unwrap_or(' ') == '=' {
-                    next_char = characters.next();
-                    Token::LessThanOrEqual
-                } else {
-                    Token::LessThan
-                }
-            }
-
-            '>' => {
-                if next_char.unwrap_or(' ') == '=' {
-                    next_char = characters.next();
-                    Token::GreaterThanOrEqual
-                } else {
-                    Token::GreaterThan
-                }
-            }
-
-            _ => {
-                return Err(format!(
-                    "Could not match character {} to any token",
-                    character
-                ));
-            }
+                // if there is no = character after the current character
+                // for example +
+                _ => match character {
+                    '+' => Token::Add,
+                    '*' => Token::Multiply,
+                    '/' => Token::Divide,
+                    '=' => Token::Assign,
+                    '<' => Token::LessThan,
+                    '>' => Token::GreaterThan,
+                    '-' => Token::Subtract,
+                    _ => {
+                        return Err(format!(
+                            "Could not match character {:?} to any token",
+                            character
+                        ));
+                    }
+                },
+            },
         };
+
+        // discard any redundant tokens
         if token != Token::Empty {
             tokens.push(token);
         }
     }
+
     Ok(tokens)
 }
 
-fn tokenize_string(first_char: char, characters: &mut std::str::Chars) -> Result<Token, String> {
+fn tokenize_identifier(first_char: char, char_iter: &mut Peekable<Chars>) -> Token {
+    let mut data = first_char.to_string();
+    while let Some('_') | Some('A'..='Z') | Some('a'..='z') | Some('0'..='9') = char_iter.peek() {
+        data.push(char_iter.next().unwrap());
+    }
+
+    match data.as_str() {
+        "if" => Token::If,
+        "else" => Token::Else,
+        "while" => Token::While,
+        "and" => Token::And,
+        "or" => Token::Or,
+        "not" => Token::Not,
+        "true" => Token::True,
+        "false" => Token::False,
+        "func" => Token::FunctionDef,
+        "return" => Token::Return,
+        _ => Token::Identifier(data),
+    }
+}
+
+fn tokenize_number(first_char: char, char_iter: &mut Peekable<Chars>) -> Result<Token, String> {
+    let mut data = first_char.to_string();
+    let mut has_decimals = false;
+
+    while match char_iter.peek() {
+        Some('_') | Some('0'..='9') => true,
+        Some('A'..='Z') | Some('a'..='z') => {
+            return Err(String::from("Found an alphabetical character in a number!"))
+        }
+        Some('.') => {
+            if has_decimals {
+                return Err(String::from("Multiple decimal separators in one number!"));
+            }
+            has_decimals = true;
+            true
+        }
+        _ => false,
+    } {
+        data.push(char_iter.next().unwrap());
+    }
+
+    // erase underscores
+    data.retain(|c| c != '_');
+    // erase leading and trailing zeroes
+    data = data.trim_matches('0').to_string();
+
+    if data.is_empty() {
+        data.push('0');
+    }
+
+    if data.ends_with('.') {
+        data.push('0');
+    }
+
+    if data.starts_with('.') {
+        data.insert(0, '0');
+    }
+
+    Ok(Token::Number(data))
+}
+
+fn tokenize_string(char_iter: &mut Peekable<Chars>) -> Result<Token, String> {
     let mut data = String::new();
-    let mut next_char = Some(first_char);
-    while match next_char.unwrap_or('\0') {
-        '\0' => return Err(String::from("String literal not closed")),
-        '"' => false,
-        '\\' => {
-            match characters.next().unwrap_or('\0') {
-                '\\' => data.push('\\'),
-                'n' => data.push('\n'),
-                '\'' => data.push('\''),
-                '"' => data.push('"'),
-                'U' => {
-                    // TODO implement unicode support
-                    return Err(String::from(
-                        "Unicode code point construction not yet supported!",
-                    ));
-                }
-                '\n' => (),
-                '\0' => {
-                    return Err(String::from(
-                        "Found end-of-file after escape character \\!",
-                    ));
-                }
-                _ => {
-                    // skip newline
-                    while match characters.next().unwrap_or('\0') {
-                        '\n' => false,
-                        '\0' => {
+    while let Some(character) = char_iter.next() {
+        match character {
+            // we have reached the end of the string
+            '"' => return Ok(Token::StringLiteral(data)),
+            '\\' => {
+                match char_iter.next() {
+                    Some('\\') => data.push('\\'),
+                    Some('n') => data.push('\n'),
+                    Some('\'') => data.push('\''),
+                    Some('"') => data.push('"'),
+                    Some('U') => {
+                        if let Some('+') = char_iter.next() {
+                            let mut hex_input = String::new();
+                            while let Some('0'..='9') | Some('a'..='f') | Some('A'..='F') =
+                                char_iter.peek()
+                            {
+                                hex_input.push(char_iter.next().unwrap());
+                            }
+                            // this should always have valid input
+                            let char_code = u32::from_str_radix(&hex_input, 16).unwrap();
+                            if let Some(c) = std::char::from_u32(char_code) {
+                                data.push(c);
+                            } else {
+                                return Err(format!(
+                                    "Invalid unicode character code {}!",
+                                    char_code
+                                ));
+                            }
+                        } else {
                             return Err(String::from(
-                                "Expected any of \\, n, \', \" or U after escape character \\!",
+                                "Unicode literals need to be of the form \\U+xxxx",
                             ));
                         }
-                        _ => true,
-                    } {}
-                    next_char = characters.next();
-                }
-            };
-            true
+                    }
+
+                    // skip newline
+                    Some('\n') => (),
+                    _ => {
+                        return Err(String::from(
+                            "Expected any of \\, n, \', \" or U after escape character \\!",
+                        ));
+                    }
+                };
+            }
+            _ => data.push(character),
         }
-        _ => {
-            data.push(next_char.unwrap());
-            next_char = characters.next();
-            true
-        }
-    } {}
-    Ok(Token::StringLiteral(data))
+    }
+    Err(String::from("String literal not closed"))
 }
 
 #[cfg(test)]
@@ -344,6 +300,7 @@ mod test {
         assert!(tokenize("unknown symbol&").is_err());
         assert!(tokenize("\" this is an unclosed string # not a comment").is_err());
         assert!(tokenize(" \" unused \\ in a string literal \" ").is_err());
+        assert!(tokenize("\"\\U+1021fFF\"").is_err());
     }
 
     #[test]
@@ -408,6 +365,25 @@ mod test {
                 Token::True,
                 Token::Or,
                 Token::False
+            ]
+        );
+    }
+
+    #[test]
+    fn strings() {
+        assert_eq!(
+            tokenize(
+                "
+            \"this is a string \\\non one line\"
+             \"\\\"\\\'\\n\\\\\" 
+             \"\\U+4B\\U+3B6\\U+2764\\U+1F4af\"
+             "
+            )
+            .unwrap(),
+            vec![
+                Token::StringLiteral(String::from("this is a string on one line")),
+                Token::StringLiteral(String::from("\"\'\n\\")),
+                Token::StringLiteral(String::from("Kζ❤💯")),
             ]
         );
     }
