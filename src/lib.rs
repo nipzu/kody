@@ -58,7 +58,6 @@ fn get_file_contents(filename: &PathBuf) -> Result<String, String> {
         )
     })?;
 
-    // TODO maybe check for null bytes
     Ok(filedata)
 }
 
