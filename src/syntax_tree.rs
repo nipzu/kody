@@ -187,13 +187,13 @@ fn get_next_expression(tokens: &[Token]) -> Result<(&[Token], &[Token]), String>
             | Token::Number(_)
             | Token::StringLiteral(_)
             | Token::CloseParentheses
-            | Token::CloseBraces
+            | Token::CloseCurlyBrackets
             | Token::True
             | Token::False => {
                 if let Token::Identifier(_)
                 | Token::Number(_)
                 | Token::StringLiteral(_)
-                | Token::OpenBraces
+                | Token::OpenCurlyBrackets
                 | Token::If
                 | Token::While
                 | Token::Else
@@ -221,14 +221,14 @@ fn get_next_expression(tokens: &[Token]) -> Result<(&[Token], &[Token]), String>
                     token_iterator.next();
                 }
             }
-            Token::OpenBraces => {
+            Token::OpenCurlyBrackets => {
                 let mut indent_level = 0;
                 while match token_iterator.peek() {
-                    Some((_, Token::OpenBraces)) => {
+                    Some((_, Token::OpenCurlyBrackets)) => {
                         indent_level += 1;
                         true
                     }
-                    Some((_, Token::CloseBraces)) => {
+                    Some((_, Token::CloseCurlyBrackets)) => {
                         if indent_level == 0 {
                             false
                         } else {
@@ -266,7 +266,6 @@ fn identify_expressions(tokens: &[Token]) -> Result<Vec<&[Token]>, String> {
     Ok(expressions)
 }
 
-// TODO what about negative numbers?
 // FIXME, TODO this thing needs some heavy reformatting
 fn parse_expression_tokens(tokens: &[Token]) -> Result<KodyNode, String> {
     assert!(!tokens.is_empty());
@@ -279,7 +278,9 @@ fn parse_expression_tokens(tokens: &[Token]) -> Result<KodyNode, String> {
     }
 
     // codeblock
-    if tokens.first() == Some(&Token::OpenBraces) && tokens.last() == Some(&Token::CloseBraces) {
+    if tokens.first() == Some(&Token::OpenCurlyBrackets)
+        && tokens.last() == Some(&Token::CloseCurlyBrackets)
+    {
         let expressions = identify_expressions(&tokens[1..tokens.len() - 1])?;
         let mut statements = vec![];
         for expression in expressions {
@@ -327,6 +328,13 @@ fn parse_expression_tokens(tokens: &[Token]) -> Result<KodyNode, String> {
         return Ok(KodyNode::WhileStatement {
             condition: Box::new(condition),
             action: Box::new(action),
+        });
+    }
+
+    if tokens.first() == Some(&Token::Subtract) {
+        return Ok(KodyNode::CallFunction {
+            function: Box::new(KodyNode::GetConstant { id: 0 }),
+            arguments: vec![parse_expression_tokens(&tokens[1..])?],
         });
     }
 
@@ -412,13 +420,13 @@ fn parse_expression_tokens(tokens: &[Token]) -> Result<KodyNode, String> {
             .split_at(i)
             .0
             .iter()
-            .filter(|t| *t == &Token::OpenParentheses || *t == &Token::OpenBraces)
+            .filter(|t| *t == &Token::OpenParentheses || *t == &Token::OpenCurlyBrackets)
             .count()
             != tokens
                 .split_at(i)
                 .0
                 .iter()
-                .filter(|t| *t == &Token::CloseParentheses || *t == &Token::CloseBraces)
+                .filter(|t| *t == &Token::CloseParentheses || *t == &Token::CloseCurlyBrackets)
                 .count()
         {
             continue;
@@ -486,6 +494,13 @@ fn parse_expression_tokens(tokens: &[Token]) -> Result<KodyNode, String> {
     for (i, token) in tokens.iter().enumerate() {
         match token {
             Token::Add => {
+                if tokens.get(i + 1) == Some(&Token::Add)
+                    || tokens.get(i + 1) == Some(&Token::Subtract)
+                {
+                    return Err(String::from(
+                        "Two consecutive addition or subtraction symbols",
+                    ));
+                }
                 if tokens.split_at(i).0.contains(&Token::OpenParentheses)
                     && tokens.split_at(i).1.contains(&Token::CloseParentheses)
                 {
@@ -505,13 +520,49 @@ fn parse_expression_tokens(tokens: &[Token]) -> Result<KodyNode, String> {
                 {
                     continue;
                 }
-                return Ok(KodyNode::CallFunction {
-                    function: Box::new(KodyNode::GetConstant { id: 0 }),
-                    arguments: vec![
-                        parse_expression_tokens(tokens.split_at(i).0)?,
-                        parse_expression_tokens(tokens.split_at(i + 1).1)?,
-                    ],
-                });
+                if tokens.get(i + 1) == Some(&Token::Add)
+                    || tokens.get(i + 1) == Some(&Token::Subtract)
+                {
+                    return Err(String::from(
+                        "Two consecutive addition or subtraction symbols",
+                    ));
+                }
+                if match tokens.get(i - 1).unwrap_or(&Token::OpenCurlyBrackets) {
+                    Token::Multiply
+                    | Token::Divide
+                    | Token::AddAssign
+                    | Token::SubtractAssign
+                    | Token::MultiplyAssign
+                    | Token::DivideAssign
+                    | Token::OpenParentheses
+                    | Token::OpenCurlyBrackets
+                    | Token::If
+                    | Token::Else
+                    | Token::While
+                    | Token::And
+                    | Token::Or
+                    | Token::Not
+                    | Token::True
+                    | Token::False
+                    | Token::Return
+                    | Token::Assign
+                    | Token::Equals
+                    | Token::NotEqual
+                    | Token::GreaterThan
+                    | Token::LessThan
+                    | Token::GreaterThanOrEqual
+                    | Token::LessThanOrEqual
+                    | Token::Separator => false,
+                    _ => true,
+                } {
+                    return Ok(KodyNode::CallFunction {
+                        function: Box::new(KodyNode::GetConstant { id: 0 }),
+                        arguments: vec![
+                            parse_expression_tokens(tokens.split_at(i).0)?,
+                            parse_expression_tokens(tokens.split_at(i + 1).1)?,
+                        ],
+                    });
+                }
             }
             _ => (),
         }
@@ -681,6 +732,54 @@ fn parse_expression_tokens(tokens: &[Token]) -> Result<KodyNode, String> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn negation_and_subtraction() {
+        assert_eq!(
+            parse_expression_tokens(&[
+                Token::Identifier(String::from("x")),
+                Token::Assign,
+                Token::Number(String::from("3")),
+                Token::Divide,
+                Token::Subtract,
+                Token::Number(String::from("5"))
+            ]),
+            Ok(KodyNode::SetVariable {
+                variable: Box::new(KodyNode::GetVariable { name_id: 0 }),
+                value: Box::new(KodyNode::CallFunction {
+                    function: Box::new(KodyNode::GetConstant { id: 0 }),
+                    arguments: vec![
+                        KodyNode::GetConstant { id: 0 },
+                        KodyNode::CallFunction {
+                            function: Box::new(KodyNode::GetConstant { id: 0 }),
+                            arguments: vec![KodyNode::GetConstant { id: 0 }]
+                        }
+                    ]
+                })
+            })
+        );
+        assert_eq!(
+            parse_expression_tokens(&[
+                Token::Number(String::from("5")),
+                Token::Subtract,
+                Token::Number(String::from("3")),
+            ]),
+            Ok(KodyNode::CallFunction {
+                function: Box::new(KodyNode::GetConstant { id: 0 }),
+                arguments: vec![
+                    KodyNode::GetConstant { id: 0 },
+                    KodyNode::GetConstant { id: 0 }
+                ]
+            })
+        );
+        assert!(parse_expression_tokens(&[
+            Token::Number(String::from("3")),
+            Token::Add,
+            Token::Subtract,
+            Token::Number(String::from("2"))
+        ])
+        .is_err());
+    }
 
     #[test]
     fn simple_expressions() {

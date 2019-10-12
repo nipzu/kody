@@ -10,14 +10,15 @@ pub enum Token {
     Subtract,
     Multiply,
     Divide,
+    Assign,
     AddAssign,
     SubtractAssign,
     MultiplyAssign,
     DivideAssign,
     OpenParentheses,
     CloseParentheses,
-    OpenBraces,
-    CloseBraces,
+    OpenCurlyBrackets,
+    CloseCurlyBrackets,
     If,
     Else,
     While,
@@ -27,7 +28,6 @@ pub enum Token {
     True,
     False,
     Return,
-    Assign,
     FunctionDef,
     Equals,
     NotEqual,
@@ -53,8 +53,8 @@ pub fn tokenize(filedata: &str) -> Result<Vec<Token>, String> {
             '"' => tokenize_string(&mut char_iter)?,
             '(' => Token::OpenParentheses,
             ')' => Token::CloseParentheses,
-            '{' => Token::OpenBraces,
-            '}' => Token::CloseBraces,
+            '{' => Token::OpenCurlyBrackets,
+            '}' => Token::CloseCurlyBrackets,
             ',' => Token::Separator,
             '.' => Token::MemberAcces,
             '#' => {
@@ -332,12 +332,12 @@ mod test {
                 Token::Separator,
                 Token::Identifier(String::from("y")),
                 Token::CloseParentheses,
-                Token::OpenBraces,
+                Token::OpenCurlyBrackets,
                 Token::Return,
                 Token::Identifier(String::from("x")),
                 Token::Add,
                 Token::Identifier(String::from("y")),
-                Token::CloseBraces
+                Token::CloseCurlyBrackets
             ]
         );
     }
