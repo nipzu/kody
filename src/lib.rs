@@ -14,15 +14,20 @@ use tokenizer::tokenize;
 pub fn run(arguments: &Arguments) -> Result<(), String> {
     let start_time = Instant::now();
 
-    if arguments.source_file.extension() != Some(OsStr::new("kd")) && !arguments.ignore_extensions {
-        return Err(String::from(
+    if let SourceType::File(path) = &arguments.source {
+        if path.extension() != Some(OsStr::new("kd")) && !arguments.ignore_extensions {
+            return Err(String::from(
             "Incorrect source file extension. Use .kd extension or the --ignore-extensions flag.",
         ));
+        }
     }
 
-    let filedata = get_file_contents(&arguments.source_file)?;
+    let source_data = match &arguments.source {
+        SourceType::File(path) => get_file_contents(&path)?,
+        SourceType::Text(data) => data.clone(),
+    };
 
-    let _tree = parse_file(filedata, &arguments)?;
+    let _tree = parse_file(source_data, &arguments)?;
 
     let end_time = Instant::now();
 
@@ -31,15 +36,15 @@ pub fn run(arguments: &Arguments) -> Result<(), String> {
     Ok(())
 }
 
-pub fn handle_error(value: String) -> ! {
-    println!("ERROR: {}", value);
-    std::process::exit(1);
-}
-
 pub struct Arguments {
-    pub source_file: PathBuf,
+    pub source: SourceType,
     pub is_verbose: bool,
     pub ignore_extensions: bool,
+}
+
+pub enum SourceType {
+    File(PathBuf),
+    Text(String),
 }
 
 fn get_file_contents(filename: &PathBuf) -> Result<String, String> {

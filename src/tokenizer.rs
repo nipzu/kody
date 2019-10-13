@@ -35,7 +35,7 @@ pub enum Token {
     LessThan,
     GreaterThanOrEqual,
     LessThanOrEqual,
-    MemberAcces,
+    MemberAccess,
     Separator,
     Empty,
 }
@@ -56,7 +56,7 @@ pub fn tokenize(filedata: &str) -> Result<Vec<Token>, String> {
             '{' => Token::OpenCurlyBrackets,
             '}' => Token::CloseCurlyBrackets,
             ',' => Token::Separator,
-            '.' => Token::MemberAcces,
+            '.' => Token::MemberAccess,
             '#' => {
                 // comment until the end of the line
                 for c in &mut char_iter {
@@ -309,7 +309,7 @@ mod test {
             tokenize("x.y").unwrap(),
             vec![
                 Token::Identifier(String::from("x")),
-                Token::MemberAcces,
+                Token::MemberAccess,
                 Token::Identifier(String::from("y"))
             ]
         );

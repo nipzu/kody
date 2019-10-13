@@ -1,7 +1,7 @@
 use std::env::args_os;
 use std::path::PathBuf;
 
-use kody::{handle_error, run, Arguments};
+use kody::{run, Arguments, SourceType};
 
 fn main() {
     let arguments = parse_args().unwrap_or_else(|e| handle_error(e));
@@ -13,8 +13,8 @@ fn main() {
 fn parse_args() -> Result<Arguments, String> {
     let mut args = args_os().skip(1);
 
-    let source_file = match args.next() {
-        Some(val) => PathBuf::from(val),
+    let source = match args.next() {
+        Some(val) => SourceType::File(PathBuf::from(val)),
         None => {
             return Err(String::from(
                 "Please provide a source file as a program argument!",
@@ -32,8 +32,13 @@ fn parse_args() -> Result<Arguments, String> {
         .any(|opt| opt == "--ignore-extensions" || opt == "-e");
 
     Ok(Arguments {
-        source_file,
+        source,
         is_verbose,
         ignore_extensions,
     })
+}
+
+fn handle_error(value: String) -> ! {
+    println!("ERROR: {}", value);
+    std::process::exit(1);
 }
