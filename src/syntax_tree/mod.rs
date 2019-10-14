@@ -269,6 +269,7 @@ fn identify_expressions(tokens: &[Token]) -> Result<Vec<&[Token]>, String> {
     Ok(expressions)
 }
 
+// TODO you can never have too many tests
 #[cfg(test)]
 mod test {
     use super::*;
