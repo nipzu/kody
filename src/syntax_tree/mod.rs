@@ -1,4 +1,3 @@
-use crate::runtime::add_function;
 use crate::tokenizer::Token;
 
 mod expression_parser;
@@ -41,8 +40,50 @@ pub enum KodyNode {
     },
 }
 
-pub fn parse_tokens(tokens: &[Token]) -> Result<KodyNode, String> {
-    parse_code_block(tokens)
+#[derive(Debug)]
+pub struct KodySyntaxTree {
+    functions: Vec<KodyFunctionData>,
+    main: KodyNode,
+}
+
+#[derive(Debug)]
+pub struct KodyFunctionData {
+    name: String,
+    arguments: Vec<String>,
+    body: KodyNode,
+}
+
+pub fn parse_tokens(tokens: &[Token]) -> Result<KodySyntaxTree, String> {
+    let (function_tokens, remaining_tokens) = get_tokens_of_functions(tokens)?;
+
+    let mut functions = Vec::with_capacity(function_tokens.len());
+
+    for func_tokens in function_tokens {
+        functions.push(parse_function_tokens(&func_tokens)?);
+    }
+
+    if remaining_tokens.is_empty() {
+        return Err(String::from("No code besides function definitions"))
+    }
+
+    let main = parse_code_block(&remaining_tokens)?;
+
+    Ok(KodySyntaxTree { functions, main })
+}
+
+fn get_tokens_of_functions(tokens: &[Token]) -> Result<(Vec<Vec<Token>>, Vec<Token>), String> {
+    let mut functions = vec![];
+
+    let mut remaining_tokens = tokens.to_vec();
+    let mut contains = true;
+    while contains {
+        let (new_func, new_rem_tokens) = get_next_function_tokens(&remaining_tokens)?;
+        remaining_tokens = new_rem_tokens.to_vec();
+        functions.push(new_func);
+        contains = remaining_tokens.contains(&Token::FunctionDef)
+    }
+
+    Ok((functions, remaining_tokens))
 }
 
 fn parse_code_block(tokens: &[Token]) -> Result<KodyNode, String> {
@@ -101,20 +142,12 @@ fn get_while_expression_tokens(tokens: &[Token]) -> Result<(&[Token], &[Token]),
     Ok(tokens.split_at(condition.len() + action.len() + 1))
 }
 
-fn get_function_tokens(tokens: &[Token]) -> Result<(&[Token], &[Token]), String> {
-    let function_name;
-    if let Some(Token::Identifier(name)) = tokens.get(1) {
-        function_name = name;
+fn parse_function_tokens(tokens: &[Token]) -> Result<KodyFunctionData, String> {
+    let name = if let Some(Token::Identifier(function_name)) = tokens.get(1) {
+        function_name.clone()
     } else {
         return Err(String::from("Expected identifier after function keyword!"));
-    }
-
-    if let Some(Token::OpenParentheses) = tokens.get(2) {
-    } else {
-        return Err(String::from(
-            "Expected parentheses after function identifier!",
-        ));
-    }
+    };
 
     let mut argument_iter = tokens.iter().skip(3);
     let mut arguments = vec![];
@@ -122,8 +155,8 @@ fn get_function_tokens(tokens: &[Token]) -> Result<(&[Token], &[Token]), String>
 
     match argument_iter.next() {
         Some(Token::Identifier(name)) => {
-            arguments.push(name.as_str());
-            argument_len += 1
+            arguments.push(name.clone());
+            argument_len += 1;
         }
         Some(Token::CloseParentheses) => (),
         _ => {
@@ -140,7 +173,7 @@ fn get_function_tokens(tokens: &[Token]) -> Result<(&[Token], &[Token]), String>
     } {
         argument_len += 1;
         if let Some(Token::Identifier(name)) = argument_iter.next() {
-            arguments.push(name);
+            arguments.push(name.clone());
         } else {
             return Err(String::from("Unexpexted token in function arguments!"));
         }
@@ -148,15 +181,57 @@ fn get_function_tokens(tokens: &[Token]) -> Result<(&[Token], &[Token]), String>
 
     let body_tokens = get_next_expression(&tokens[4 + argument_len * 2 - 1..tokens.len()])?.0;
 
-    let body_len = body_tokens.len();
-
     let body = parse_expression_tokens(body_tokens)?;
+
+    Ok(KodyFunctionData {
+        name,
+        arguments,
+        body,
+    })
+}
+
+fn get_next_function_tokens(tokens: &[Token]) -> Result<(Vec<Token>, Vec<Token>), String> {
+    let func_index = match tokens.iter().position(|t| t == &Token::FunctionDef) {
+        Some(index) => index,
+        None => return Ok((vec![], tokens.to_vec())),
+    };
+
+    let func_tokens = &tokens[func_index..tokens.len()];
+
+    if let Some(Token::OpenParentheses) = func_tokens.get(2) {
+    } else {
+        return Err(String::from(
+            "Expected parentheses after function identifier!",
+        ));
+    }
+
+    let argument_len = match func_tokens
+        .iter()
+        .skip(3)
+        .position(|t| t == &Token::CloseParentheses)
+    {
+        Some(length) => length,
+        None => {
+            return Err(String::from(
+                "Unclosed parentheses after function identifier!",
+            ))
+        }
+    };
+
+    let body_tokens =
+        get_next_expression(&func_tokens[4 + argument_len * 2 - 1..func_tokens.len()])?.0;
+
+    let body_len = body_tokens.len();
 
     let total_len = argument_len * 2 - 1 + body_len + 4;
 
-    add_function(function_name, arguments, Box::new(body));
+    let mut remaining_tokens = tokens[0..func_index].to_vec();
+    remaining_tokens.extend_from_slice(&tokens[func_index + total_len..tokens.len()]);
 
-    Ok((tokens.split_at(total_len).1, &[]))
+    Ok((
+        tokens[func_index..func_index + total_len].to_vec(),
+        remaining_tokens,
+    ))
 }
 
 fn get_next_expression(tokens: &[Token]) -> Result<(&[Token], &[Token]), String> {
@@ -168,10 +243,6 @@ fn get_next_expression(tokens: &[Token]) -> Result<(&[Token], &[Token]), String>
 
     if tokens.first() == Some(&Token::While) {
         return get_while_expression_tokens(&tokens);
-    }
-
-    if tokens.first() == Some(&Token::FunctionDef) {
-        return get_function_tokens(&tokens);
     }
 
     let mut token_iterator = tokens.iter().enumerate().peekable();

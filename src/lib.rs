@@ -8,7 +8,7 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::time::Instant;
 
-use syntax_tree::{parse_tokens, KodyNode};
+use syntax_tree::{parse_tokens, KodySyntaxTree};
 use tokenizer::tokenize;
 
 pub fn run(arguments: &Arguments) -> Result<(), String> {
@@ -66,7 +66,7 @@ fn get_file_contents(filename: &PathBuf) -> Result<String, String> {
     Ok(filedata)
 }
 
-fn parse_file(filedata: String, arguments: &Arguments) -> Result<KodyNode, String> {
+fn parse_file(filedata: String, arguments: &Arguments) -> Result<KodySyntaxTree, String> {
     if arguments.is_verbose {
         println!();
         println!("[INFO]: File contents:");
