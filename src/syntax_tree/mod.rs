@@ -361,11 +361,11 @@ mod test {
             Ok(KodyNode::SetVariable {
                 variable: Box::new(KodyNode::GetVariable { name: String::from("x") }),
                 value: Box::new(KodyNode::CallFunction {
-                    function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                    function: Box::new(KodyNode::GetVariable { name: String::from("__divide") }),
                     arguments: vec![
                         KodyNode::GetConstant { value: KodyObject::Number(String::from("3")) },
                         KodyNode::CallFunction {
-                            function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                            function: Box::new(KodyNode::GetVariable { name: String::from("__negate") }),
                             arguments: vec![KodyNode::GetConstant { value: KodyObject::Number(String::from("5")) }]
                         }
                     ]
@@ -379,7 +379,7 @@ mod test {
                 Token::Number(String::from("3")),
             ]),
             Ok(KodyNode::CallFunction {
-                function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                function: Box::new(KodyNode::GetVariable { name: String::from("__subtract") }),
                 arguments: vec![
                     KodyNode::GetConstant { value: KodyObject::Number(String::from("5")) },
                     KodyNode::GetConstant { value: KodyObject::Number(String::from("3")) }
@@ -408,7 +408,7 @@ mod test {
             Ok(KodyNode::SetVariable {
                 variable: Box::new(KodyNode::GetVariable { name: String::from("x") }),
                 value: Box::new(KodyNode::CallFunction {
-                    function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                    function: Box::new(KodyNode::GetVariable { name: String::from("__add") }),
                     arguments: vec![
                         KodyNode::GetVariable { name: String::from("y") },
                         KodyNode::GetConstant { value: KodyObject::Number(String::from("1")) },
@@ -432,7 +432,7 @@ mod test {
                 arguments: vec![
                     KodyNode::GetVariable { name: String::from("y") },
                     KodyNode::CallFunction {
-                        function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                        function: Box::new(KodyNode::GetVariable { name: String::from("__add") }),
                         arguments: vec![
                             KodyNode::GetConstant { value: KodyObject::Number(String::from("1")) },
                             KodyNode::GetConstant { value: KodyObject::Number(String::from("2")) }
@@ -456,11 +456,11 @@ mod test {
                 Token::CloseParentheses
             ]),
             Ok(KodyNode::CallFunction {
-                function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                function: Box::new(KodyNode::GetVariable { name: String::from("__multiply") }),
                 arguments: vec![
                     KodyNode::GetVariable { name: String::from("a") },
                     KodyNode::CallFunction {
-                        function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                        function: Box::new(KodyNode::GetVariable { name: String::from("__subtract") }),
                         arguments: vec![
                             KodyNode::GetConstant { value: KodyObject::Number(String::from("2")) },
                             KodyNode::GetVariable { name: String::from("b") }
@@ -487,7 +487,7 @@ mod test {
                 Token::CloseCurlyBrackets
             ]),
             Ok(KodyNode::CallFunction {
-                function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                function: Box::new(KodyNode::GetVariable { name: String::from("__add") }),
                 arguments: vec![
                     KodyNode::GetVariable { name: String::from("a") },
                     KodyNode::IfStatement {
@@ -522,12 +522,12 @@ mod test {
                 Token::CloseParentheses
             ]),
             Ok(KodyNode::CallFunction {
-                function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                function: Box::new(KodyNode::GetVariable { name: String::from("__not") }),
                 arguments: vec![KodyNode::CallFunction {
-                    function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                    function: Box::new(KodyNode::GetVariable { name: String::from("__or") }),
                     arguments: vec![
                         KodyNode::CallFunction {
-                            function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                            function: Box::new(KodyNode::GetVariable { name: String::from("__and") }),
                             arguments: vec![
                                 KodyNode::GetConstant { value: KodyObject::Bool(true) },
                                 KodyNode::GetConstant { value: KodyObject::Bool(false) }
@@ -555,7 +555,7 @@ mod test {
             ]),
             Ok(KodyNode::IfStatement {
                 condition: Box::new(KodyNode::CallFunction {
-                    function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                    function: Box::new(KodyNode::GetVariable { name: String::from("__equals") }),
                     arguments: vec![
                         KodyNode::GetVariable { name: String::from("y") },
                         KodyNode::GetConstant { value: KodyObject::Number(String::from("1")) }
@@ -594,7 +594,7 @@ mod test {
                         KodyNode::SetVariable {
                             variable: Box::new(KodyNode::GetVariable { name: String::from("x") }),
                             value: Box::new(KodyNode::CallFunction {
-                                function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
+                                function: Box::new(KodyNode::GetVariable { name: String::from("__divide") }),
                                 arguments: vec![
                                     KodyNode::GetVariable { name: String::from("x") },
                                     KodyNode::GetVariable { name: String::from("y") }
