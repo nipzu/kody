@@ -1,5 +1,6 @@
 use super::{get_next_expression, identify_expressions, KodyNode};
 use crate::tokenizer::Token;
+use crate::runtime::objects::KodyObject;
 
 fn is_in_codeblock(tokens: &[Token], index: usize) -> bool {
     tokens
@@ -57,7 +58,7 @@ fn check_codeblock(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
 fn check_return(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
     if tokens.first() == Some(&Token::Return) {
         let return_value = if tokens.len() == 1 {
-            Box::new(KodyNode::GetConstant { id: 0 })
+            Box::new(KodyNode::GetConstant { value: KodyObject::Empty })
         } else {
             Box::new(parse_expression_tokens(&tokens[1..tokens.len()])?)
         };
@@ -105,7 +106,7 @@ fn check_while_expression(tokens: &[Token]) -> Result<Option<KodyNode>, String> 
 fn check_negation(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
     if tokens.first() == Some(&Token::Subtract) {
         return Ok(Some(KodyNode::CallFunction {
-            function: Box::new(KodyNode::GetConstant { id: 0 }),
+            function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
             arguments: vec![parse_expression_tokens(&tokens[1..])?],
         }));
     }
@@ -115,11 +116,11 @@ fn check_negation(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
 fn check_value(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
     if tokens.len() == 1 {
         return Ok(Some(match tokens.first().unwrap() {
-            Token::Identifier(_name) => KodyNode::GetVariable { name_id: 0 },
-            Token::StringLiteral(_value) => KodyNode::GetConstant { id: 0 },
-            Token::Number(_value) => KodyNode::GetConstant { id: 0 },
-            Token::True => KodyNode::GetConstant { id: 0 },
-            Token::False => KodyNode::GetConstant { id: 0 },
+            Token::Identifier(name) => KodyNode::GetVariable { name: name.clone() },
+            Token::StringLiteral(value) => KodyNode::GetConstant { value: KodyObject::StringLiteral(value.clone()) },
+            Token::Number(value) => KodyNode::GetConstant { value: KodyObject::Number(value.clone()) },
+            Token::True => KodyNode::GetConstant { value: KodyObject::Bool(true) },
+            Token::False => KodyNode::GetConstant { value: KodyObject::Bool(false) },
             _ => unreachable!(),
         }));
     }
@@ -148,18 +149,18 @@ fn check_assignment(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
             }));
         }
 
-        let function_id = match tokens[i] {
-            Token::AddAssign => 0,
-            Token::SubtractAssign => 0,
-            Token::MultiplyAssign => 0,
-            Token::DivideAssign => 0,
+        let function_value = match tokens[i] {
+            Token::AddAssign => KodyObject::Empty,
+            Token::SubtractAssign => KodyObject::Empty,
+            Token::MultiplyAssign => KodyObject::Empty,
+            Token::DivideAssign => KodyObject::Empty,
             _ => unreachable!(),
         };
 
         return Ok(Some(KodyNode::SetVariable {
             variable: Box::new(parse_expression_tokens(variable_tokens)?),
             value: Box::new(KodyNode::CallFunction {
-                function: Box::new(KodyNode::GetConstant { id: function_id }),
+                function: Box::new(KodyNode::GetConstant { value: function_value }),
                 arguments: vec![
                     parse_expression_tokens(variable_tokens)?,
                     parse_expression_tokens(value_tokens)?,
@@ -180,17 +181,17 @@ fn check_comparison(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
         | Token::LessThan => !is_in_codeblock(tokens, index) && !is_in_parentheses(tokens, index),
         _ => false,
     }) {
-        let function_id = match tokens[i] {
-            Token::Equals => 0,
-            Token::NotEqual => 0,
-            Token::GreaterThan => 0,
-            Token::GreaterThanOrEqual => 0,
-            Token::LessThan => 0,
-            Token::LessThanOrEqual => 0,
+        let function_value = match tokens[i] {
+            Token::Equals => KodyObject::Empty,
+            Token::NotEqual => KodyObject::Empty,
+            Token::GreaterThan => KodyObject::Empty,
+            Token::GreaterThanOrEqual => KodyObject::Empty,
+            Token::LessThan => KodyObject::Empty,
+            Token::LessThanOrEqual => KodyObject::Empty,
             _ => unreachable!(),
         };
         return Ok(Some(KodyNode::CallFunction {
-            function: Box::new(KodyNode::GetConstant { id: function_id }),
+            function: Box::new(KodyNode::GetConstant { value: function_value }),
             arguments: vec![
                 parse_expression_tokens(tokens.split_at(i).0)?,
                 parse_expression_tokens(tokens.split_at(i + 1).1)?,
@@ -222,13 +223,13 @@ fn check_addition_and_subtraction(tokens: &[Token]) -> Result<Option<KodyNode>, 
                 "Two consecutive addition or subtraction symbols",
             ));
         }
-        let function_id = match tokens[i] {
-            Token::Add => 0,
-            Token::Subtract => 0,
+        let function_value = match tokens[i] {
+            Token::Add => KodyObject::Empty,
+            Token::Subtract => KodyObject::Empty,
             _ => unreachable!(),
         };
         return Ok(Some(KodyNode::CallFunction {
-            function: Box::new(KodyNode::GetConstant { id: function_id }),
+            function: Box::new(KodyNode::GetConstant { value: function_value }),
             arguments: vec![
                 parse_expression_tokens(tokens.split_at(i).0)?,
                 parse_expression_tokens(tokens.split_at(i + 1).1)?,
@@ -245,13 +246,13 @@ fn check_multiplication_and_division(tokens: &[Token]) -> Result<Option<KodyNode
         }
         _ => false,
     }) {
-        let function_id = match tokens[i] {
-            Token::Multiply => 0,
-            Token::Divide => 0,
+        let function_value = match tokens[i] {
+            Token::Multiply => KodyObject::Empty,
+            Token::Divide => KodyObject::Empty,
             _ => unreachable!(),
         };
         return Ok(Some(KodyNode::CallFunction {
-            function: Box::new(KodyNode::GetConstant { id: function_id }),
+            function: Box::new(KodyNode::GetConstant { value: function_value }),
             arguments: vec![
                 parse_expression_tokens(tokens.split_at(i).0)?,
                 parse_expression_tokens(tokens.split_at(i + 1).1)?,
@@ -267,7 +268,7 @@ fn check_or_operator(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
         _ => false,
     }) {
         return Ok(Some(KodyNode::CallFunction {
-            function: Box::new(KodyNode::GetConstant { id: 0 }),
+            function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
             arguments: vec![
                 parse_expression_tokens(tokens.split_at(i).0)?,
                 parse_expression_tokens(tokens.split_at(i + 1).1)?,
@@ -283,7 +284,7 @@ fn check_and_operator(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
         _ => false,
     }) {
         return Ok(Some(KodyNode::CallFunction {
-            function: Box::new(KodyNode::GetConstant { id: 0 }),
+            function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
             arguments: vec![
                 parse_expression_tokens(tokens.split_at(i).0)?,
                 parse_expression_tokens(tokens.split_at(i + 1).1)?,
@@ -299,7 +300,7 @@ fn check_not_operator(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
         _ => false,
     }) {
         return Ok(Some(KodyNode::CallFunction {
-            function: Box::new(KodyNode::GetConstant { id: 0 }),
+            function: Box::new(KodyNode::GetConstant { value: KodyObject::Empty }),
             arguments: vec![parse_expression_tokens(tokens.split_at(i + 1).1)?],
         }));
     }
@@ -375,12 +376,12 @@ fn check_function_call_and_member_access(tokens: &[Token]) -> Result<Option<Kody
             }
 
             Token::MemberAccess => {
-                if let Some(&Token::Identifier(_)) = tokens.get(tokens.len() - i) {
+                if let Some(Token::Identifier(member_name)) = tokens.get(tokens.len() - i) {
                     return Ok(Some(KodyNode::GetMember {
                         base_object: Box::new(parse_expression_tokens(
                             tokens.split_at(tokens.len() - i - 1).0,
                         )?),
-                        member_name_id: 0,
+                        member_name: member_name.clone(),
                     }));
                 }
             }

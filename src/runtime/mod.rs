@@ -1,6 +1,6 @@
-/*use crate::syntax_tree::KodyNode;
 
-mod objects;
+pub mod objects;
+/*use crate::syntax_tree::KodyNode;
 
 pub struct KodyRuntime {}
 
