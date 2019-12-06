@@ -163,7 +163,10 @@ fn tokenize_number(first_char: char, char_iter: &mut Peekable<Chars>) -> Result<
     // erase underscores
     data.retain(|c| c != '_');
     // erase leading and trailing zeroes
-    data = data.trim_matches('0').to_string();
+    data = data.trim_start_matches('0').to_string();
+    if has_decimals {
+        data = data.trim_end_matches('0').to_string();
+    }
 
     if data.is_empty() {
         data.push('0');
@@ -278,7 +281,7 @@ mod test {
     #[test]
     fn numbers() {
         assert_eq!(
-            tokenize("12, 0000_25_._300, 0.0, 2., 0").unwrap(),
+            tokenize("12, 0000_25_._300, 0.0, 2., 0, 120").unwrap(),
             vec![
                 Token::Number(String::from("12")),
                 Token::Separator,
@@ -289,6 +292,8 @@ mod test {
                 Token::Number(String::from("2.0")),
                 Token::Separator,
                 Token::Number(String::from("0")),
+                Token::Separator,
+                Token::Number(String::from("120"))
             ]
         );
     }

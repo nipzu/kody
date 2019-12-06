@@ -10,6 +10,7 @@ use std::time::Instant;
 
 use syntax_tree::{parse_tokens, KodySyntaxTree};
 use tokenizer::tokenize;
+use runtime::execute;
 
 pub fn run(arguments: &Arguments) -> Result<(), String> {
     let start_time = Instant::now();
@@ -27,7 +28,9 @@ pub fn run(arguments: &Arguments) -> Result<(), String> {
         SourceType::Text(data) => data.clone(),
     };
 
-    let _tree = parse_file(source_data, &arguments)?;
+    let tree = parse_file(source_data, &arguments)?;
+
+    execute(&tree)?;
 
     let end_time = Instant::now();
 

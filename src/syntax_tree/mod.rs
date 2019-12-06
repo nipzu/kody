@@ -43,8 +43,8 @@ pub enum KodyNode {
 
 #[derive(Debug)]
 pub struct KodySyntaxTree {
-    functions: Vec<KodyFunctionData>,
-    main: KodyNode,
+    pub functions: Vec<KodyFunctionData>,
+    pub main: KodyNode,
 }
 
 #[derive(Debug)]
