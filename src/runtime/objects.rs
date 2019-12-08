@@ -25,5 +25,6 @@ pub enum KodyValue {
     Number(String),
     StringLiteral(String),
     Function(KodyFunctionData),
+    NativeFunction(fn(Vec<KodyObject>) -> Result<KodyObject, String>),
     Empty,
 }

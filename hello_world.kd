@@ -1,0 +1,12 @@
+h = "Hello"
+w = "World"
+n = 11
+f = "\U+1F603"
+
+func print2(a, b) {
+    print(a)
+    print(b)
+}
+
+print(h, w)
+print2(n, f)

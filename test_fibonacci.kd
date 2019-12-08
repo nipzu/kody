@@ -8,6 +8,7 @@ func fib(n) {
     i = 0
     a = 1
     b = 0
+    print(a)
     while (i < n) {
         print(pow(b))
         i += 1

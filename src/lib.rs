@@ -1,3 +1,7 @@
+#[macro_use]
+extern crate lazy_static;
+
+mod libkody;
 mod runtime;
 mod syntax_tree;
 mod tokenizer;

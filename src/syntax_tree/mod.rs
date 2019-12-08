@@ -1,4 +1,6 @@
-use crate::runtime::objects::KodyObject;
+use std::collections::HashMap;
+
+use crate::runtime::objects::{KodyObject, KodyValue};
 use crate::tokenizer::Token;
 
 mod expression_parser;
@@ -45,15 +47,15 @@ pub enum KodyNode {
 
 #[derive(Debug)]
 pub struct KodySyntaxTree {
-    pub functions: Vec<KodyFunctionData>,
+    pub global_variables: HashMap<String, KodyObject>,
     pub main: KodyNode,
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct KodyFunctionData {
     pub name: String,
-    arguments: Vec<String>,
-    body: KodyNode,
+    pub arguments: Vec<String>,
+    pub body: KodyNode,
 }
 
 pub fn parse_tokens(tokens: &[Token]) -> Result<KodySyntaxTree, String> {
@@ -70,15 +72,28 @@ pub fn parse_tokens(tokens: &[Token]) -> Result<KodySyntaxTree, String> {
     }
 
     let main = parse_code_block(&remaining_tokens)?;
+    // make a hashmap out of functions
+    let global_variables = functions
+        .iter()
+        .map(|func_data| {
+            (
+                func_data.name.clone(),
+                KodyObject::from(KodyValue::Function(func_data.clone())),
+            )
+        })
+        .collect();
 
-    Ok(KodySyntaxTree { functions, main })
+    Ok(KodySyntaxTree {
+        global_variables,
+        main,
+    })
 }
 
 fn get_tokens_of_functions(tokens: &[Token]) -> Result<(Vec<Vec<Token>>, Vec<Token>), String> {
     let mut functions = vec![];
 
     let mut remaining_tokens = tokens.to_vec();
-    let mut contains = true;
+    let mut contains = remaining_tokens.contains(&Token::FunctionDef);
     while contains {
         let (new_func, new_rem_tokens) = get_next_function_tokens(&remaining_tokens)?;
         remaining_tokens = new_rem_tokens.to_vec();
@@ -222,11 +237,11 @@ fn get_next_function_tokens(tokens: &[Token]) -> Result<(Vec<Token>, Vec<Token>)
     };
 
     let body_tokens =
-        get_next_expression(&func_tokens[4 + argument_len * 2 - 1..func_tokens.len()])?.0;
+        get_next_expression(&func_tokens[4 + argument_len..func_tokens.len()])?.0;
 
     let body_len = body_tokens.len();
 
-    let total_len = argument_len * 2 - 1 + body_len + 4;
+    let total_len = argument_len + body_len + 4;
 
     let mut remaining_tokens = tokens[0..func_index].to_vec();
     remaining_tokens.extend_from_slice(&tokens[func_index + total_len..tokens.len()]);
@@ -239,6 +254,7 @@ fn get_next_function_tokens(tokens: &[Token]) -> Result<(Vec<Token>, Vec<Token>)
 
 fn get_next_expression(tokens: &[Token]) -> Result<(&[Token], &[Token]), String> {
     assert!(!tokens.is_empty());
+
 
     if tokens.first() == Some(&Token::If) {
         return get_if_expression_tokens(&tokens);
@@ -361,9 +377,7 @@ mod test {
                 Token::Number(String::from("5"))
             ]),
             Ok(KodyNode::SetVariable {
-                variable: Box::new(KodyNode::GetVariable {
-                    name: String::from("x")
-                }),
+                name: String::from("x"),
                 value: Box::new(KodyNode::CallFunction {
                     function: Box::new(KodyNode::GetVariable {
                         name: String::from("__divide")
@@ -424,9 +438,7 @@ mod test {
                 Token::Number(String::from("1"))
             ]),
             Ok(KodyNode::SetVariable {
-                variable: Box::new(KodyNode::GetVariable {
-                    name: String::from("x")
-                }),
+                name: String::from("x"),
                 value: Box::new(KodyNode::CallFunction {
                     function: Box::new(KodyNode::GetVariable {
                         name: String::from("__add")
@@ -547,9 +559,7 @@ mod test {
                         action: Box::new(KodyNode::CodeBlock {
                             statements: vec![
                                 KodyNode::SetVariable {
-                                    variable: Box::new(KodyNode::GetVariable {
-                                        name: String::from("a")
-                                    }),
+                                    name: String::from("a"),
                                     value: Box::new(KodyNode::GetConstant {
                                         value: KodyObject::from(KodyValue::Number(String::from(
                                             "5"
@@ -678,9 +688,7 @@ mod test {
                 action: Box::new(KodyNode::CodeBlock {
                     statements: vec![
                         KodyNode::SetVariable {
-                            variable: Box::new(KodyNode::GetVariable {
-                                name: String::from("x")
-                            }),
+                            name: String::from("x"),
                             value: Box::new(KodyNode::CallFunction {
                                 function: Box::new(KodyNode::GetVariable {
                                     name: String::from("__divide")
@@ -696,9 +704,7 @@ mod test {
                             })
                         },
                         KodyNode::SetVariable {
-                            variable: Box::new(KodyNode::GetVariable {
-                                name: String::from("y")
-                            }),
+                            name: String::from("y"),
                             value: Box::new(KodyNode::GetConstant {
                                 value: KodyObject::from(KodyValue::Number(String::from("2")))
                             })

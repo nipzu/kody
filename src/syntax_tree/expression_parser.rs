@@ -342,7 +342,8 @@ fn check_not_operator(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
 
 // TODO idk if you can improve this
 fn check_function_call_and_member_access(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
-    for (i, token) in tokens.iter().rev().enumerate() {
+    // _i for memberaccess
+    for (_i, token) in tokens.iter().rev().enumerate() {
         match token {
             Token::CloseParentheses => {
                 let mut indent_level = 1;
