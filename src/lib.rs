@@ -8,9 +8,9 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::time::Instant;
 
+use runtime::execute;
 use syntax_tree::{parse_tokens, KodySyntaxTree};
 use tokenizer::tokenize;
-use runtime::execute;
 
 pub fn run(arguments: &Arguments) -> Result<(), String> {
     let start_time = Instant::now();

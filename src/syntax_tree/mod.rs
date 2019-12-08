@@ -1,10 +1,10 @@
-use crate::tokenizer::Token;
 use crate::runtime::objects::KodyObject;
+use crate::tokenizer::Token;
 
 mod expression_parser;
 use expression_parser::parse_expression_tokens;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum KodyNode {
     WhileStatement {
         condition: Box<KodyNode>,
@@ -24,18 +24,20 @@ pub enum KodyNode {
     GetConstant {
         value: KodyObject,
     },
+    // Maybe make this more flexible in the future
     SetVariable {
-        variable: Box<KodyNode>,
+        name: String,
         value: Box<KodyNode>,
     },
     CallFunction {
         function: Box<KodyNode>,
         arguments: Vec<KodyNode>,
     },
-    GetMember {
+    // We aren't this advanced yet
+    /*GetMember {
         base_object: Box<KodyNode>,
         member_name: String,
-    },
+    },*/
     GetVariable {
         name: String,
     },
@@ -47,9 +49,9 @@ pub struct KodySyntaxTree {
     pub main: KodyNode,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct KodyFunctionData {
-    name: String,
+    pub name: String,
     arguments: Vec<String>,
     body: KodyNode,
 }
@@ -64,7 +66,7 @@ pub fn parse_tokens(tokens: &[Token]) -> Result<KodySyntaxTree, String> {
     }
 
     if remaining_tokens.is_empty() {
-        return Err(String::from("No code besides function definitions"))
+        return Err(String::from("No code besides function definitions"));
     }
 
     let main = parse_code_block(&remaining_tokens)?;
@@ -341,7 +343,7 @@ fn identify_expressions(tokens: &[Token]) -> Result<Vec<&[Token]>, String> {
     Ok(expressions)
 }
 
-// TODO you can never have too many tests 
+// TODO you can never have too many tests
 // add a function test
 #[cfg(test)]
 mod test {
@@ -359,14 +361,24 @@ mod test {
                 Token::Number(String::from("5"))
             ]),
             Ok(KodyNode::SetVariable {
-                variable: Box::new(KodyNode::GetVariable { name: String::from("x") }),
+                variable: Box::new(KodyNode::GetVariable {
+                    name: String::from("x")
+                }),
                 value: Box::new(KodyNode::CallFunction {
-                    function: Box::new(KodyNode::GetVariable { name: String::from("__divide") }),
+                    function: Box::new(KodyNode::GetVariable {
+                        name: String::from("__divide")
+                    }),
                     arguments: vec![
-                        KodyNode::GetConstant { value: KodyObject::Number(String::from("3")) },
+                        KodyNode::GetConstant {
+                            value: KodyObject::from(KodyValue::Number(String::from("3")))
+                        },
                         KodyNode::CallFunction {
-                            function: Box::new(KodyNode::GetVariable { name: String::from("__negate") }),
-                            arguments: vec![KodyNode::GetConstant { value: KodyObject::Number(String::from("5")) }]
+                            function: Box::new(KodyNode::GetVariable {
+                                name: String::from("__negate")
+                            }),
+                            arguments: vec![KodyNode::GetConstant {
+                                value: KodyObject::from(KodyValue::Number(String::from("5")))
+                            }]
                         }
                     ]
                 })
@@ -379,10 +391,16 @@ mod test {
                 Token::Number(String::from("3")),
             ]),
             Ok(KodyNode::CallFunction {
-                function: Box::new(KodyNode::GetVariable { name: String::from("__subtract") }),
+                function: Box::new(KodyNode::GetVariable {
+                    name: String::from("__subtract")
+                }),
                 arguments: vec![
-                    KodyNode::GetConstant { value: KodyObject::Number(String::from("5")) },
-                    KodyNode::GetConstant { value: KodyObject::Number(String::from("3")) }
+                    KodyNode::GetConstant {
+                        value: KodyObject::from(KodyValue::Number(String::from("5")))
+                    },
+                    KodyNode::GetConstant {
+                        value: KodyObject::from(KodyValue::Number(String::from("3")))
+                    }
                 ]
             })
         );
@@ -406,12 +424,20 @@ mod test {
                 Token::Number(String::from("1"))
             ]),
             Ok(KodyNode::SetVariable {
-                variable: Box::new(KodyNode::GetVariable { name: String::from("x") }),
+                variable: Box::new(KodyNode::GetVariable {
+                    name: String::from("x")
+                }),
                 value: Box::new(KodyNode::CallFunction {
-                    function: Box::new(KodyNode::GetVariable { name: String::from("__add") }),
+                    function: Box::new(KodyNode::GetVariable {
+                        name: String::from("__add")
+                    }),
                     arguments: vec![
-                        KodyNode::GetVariable { name: String::from("y") },
-                        KodyNode::GetConstant { value: KodyObject::Number(String::from("1")) },
+                        KodyNode::GetVariable {
+                            name: String::from("y")
+                        },
+                        KodyNode::GetConstant {
+                            value: KodyObject::from(KodyValue::Number(String::from("1")))
+                        },
                     ]
                 })
             })
@@ -428,14 +454,24 @@ mod test {
                 Token::CloseParentheses,
             ]),
             Ok(KodyNode::CallFunction {
-                function: Box::new(KodyNode::GetVariable { name: String::from("print") }),
+                function: Box::new(KodyNode::GetVariable {
+                    name: String::from("print")
+                }),
                 arguments: vec![
-                    KodyNode::GetVariable { name: String::from("y") },
+                    KodyNode::GetVariable {
+                        name: String::from("y")
+                    },
                     KodyNode::CallFunction {
-                        function: Box::new(KodyNode::GetVariable { name: String::from("__add") }),
+                        function: Box::new(KodyNode::GetVariable {
+                            name: String::from("__add")
+                        }),
                         arguments: vec![
-                            KodyNode::GetConstant { value: KodyObject::Number(String::from("1")) },
-                            KodyNode::GetConstant { value: KodyObject::Number(String::from("2")) }
+                            KodyNode::GetConstant {
+                                value: KodyObject::from(KodyValue::Number(String::from("1")))
+                            },
+                            KodyNode::GetConstant {
+                                value: KodyObject::from(KodyValue::Number(String::from("2")))
+                            }
                         ]
                     },
                 ]
@@ -456,14 +492,24 @@ mod test {
                 Token::CloseParentheses
             ]),
             Ok(KodyNode::CallFunction {
-                function: Box::new(KodyNode::GetVariable { name: String::from("__multiply") }),
+                function: Box::new(KodyNode::GetVariable {
+                    name: String::from("__multiply")
+                }),
                 arguments: vec![
-                    KodyNode::GetVariable { name: String::from("a") },
+                    KodyNode::GetVariable {
+                        name: String::from("a")
+                    },
                     KodyNode::CallFunction {
-                        function: Box::new(KodyNode::GetVariable { name: String::from("__subtract") }),
+                        function: Box::new(KodyNode::GetVariable {
+                            name: String::from("__subtract")
+                        }),
                         arguments: vec![
-                            KodyNode::GetConstant { value: KodyObject::Number(String::from("2")) },
-                            KodyNode::GetVariable { name: String::from("b") }
+                            KodyNode::GetConstant {
+                                value: KodyObject::from(KodyValue::Number(String::from("2")))
+                            },
+                            KodyNode::GetVariable {
+                                name: String::from("b")
+                            }
                         ]
                     }
                 ]
@@ -487,18 +533,32 @@ mod test {
                 Token::CloseCurlyBrackets
             ]),
             Ok(KodyNode::CallFunction {
-                function: Box::new(KodyNode::GetVariable { name: String::from("__add") }),
+                function: Box::new(KodyNode::GetVariable {
+                    name: String::from("__add")
+                }),
                 arguments: vec![
-                    KodyNode::GetVariable { name: String::from("a") },
+                    KodyNode::GetVariable {
+                        name: String::from("a")
+                    },
                     KodyNode::IfStatement {
-                        condition: Box::new(KodyNode::GetConstant { value: KodyObject::Bool(true) }),
+                        condition: Box::new(KodyNode::GetConstant {
+                            value: KodyObject::from(KodyValue::Bool(true))
+                        }),
                         action: Box::new(KodyNode::CodeBlock {
                             statements: vec![
                                 KodyNode::SetVariable {
-                                    variable: Box::new(KodyNode::GetVariable { name: String::from("a") }),
-                                    value: Box::new(KodyNode::GetConstant { value: KodyObject::Number(String::from("5")) })
+                                    variable: Box::new(KodyNode::GetVariable {
+                                        name: String::from("a")
+                                    }),
+                                    value: Box::new(KodyNode::GetConstant {
+                                        value: KodyObject::from(KodyValue::Number(String::from(
+                                            "5"
+                                        )))
+                                    })
                                 },
-                                KodyNode::GetVariable { name: String::from("a") }
+                                KodyNode::GetVariable {
+                                    name: String::from("a")
+                                }
                             ]
                         }),
                         else_action: None
@@ -522,18 +582,30 @@ mod test {
                 Token::CloseParentheses
             ]),
             Ok(KodyNode::CallFunction {
-                function: Box::new(KodyNode::GetVariable { name: String::from("__not") }),
+                function: Box::new(KodyNode::GetVariable {
+                    name: String::from("__not")
+                }),
                 arguments: vec![KodyNode::CallFunction {
-                    function: Box::new(KodyNode::GetVariable { name: String::from("__or") }),
+                    function: Box::new(KodyNode::GetVariable {
+                        name: String::from("__or")
+                    }),
                     arguments: vec![
                         KodyNode::CallFunction {
-                            function: Box::new(KodyNode::GetVariable { name: String::from("__and") }),
+                            function: Box::new(KodyNode::GetVariable {
+                                name: String::from("__and")
+                            }),
                             arguments: vec![
-                                KodyNode::GetConstant { value: KodyObject::Bool(true) },
-                                KodyNode::GetConstant { value: KodyObject::Bool(false) }
+                                KodyNode::GetConstant {
+                                    value: KodyObject::from(KodyValue::Bool(true))
+                                },
+                                KodyNode::GetConstant {
+                                    value: KodyObject::from(KodyValue::Bool(false))
+                                }
                             ]
                         },
-                        KodyNode::GetConstant { value: KodyObject::Bool(true) }
+                        KodyNode::GetConstant {
+                            value: KodyObject::from(KodyValue::Bool(true))
+                        }
                     ]
                 }]
             })
@@ -555,15 +627,25 @@ mod test {
             ]),
             Ok(KodyNode::IfStatement {
                 condition: Box::new(KodyNode::CallFunction {
-                    function: Box::new(KodyNode::GetVariable { name: String::from("__equals") }),
+                    function: Box::new(KodyNode::GetVariable {
+                        name: String::from("__equals")
+                    }),
                     arguments: vec![
-                        KodyNode::GetVariable { name: String::from("y") },
-                        KodyNode::GetConstant { value: KodyObject::Number(String::from("1")) }
+                        KodyNode::GetVariable {
+                            name: String::from("y")
+                        },
+                        KodyNode::GetConstant {
+                            value: KodyObject::from(KodyValue::Number(String::from("1")))
+                        }
                     ]
                 }),
                 action: Box::new(KodyNode::CallFunction {
-                    function: Box::new(KodyNode::GetVariable { name: String::from("print") }),
-                    arguments: vec![KodyNode::GetVariable { name: String::from("y") }]
+                    function: Box::new(KodyNode::GetVariable {
+                        name: String::from("print")
+                    }),
+                    arguments: vec![KodyNode::GetVariable {
+                        name: String::from("y")
+                    }]
                 }),
                 else_action: None
             })
@@ -586,24 +668,40 @@ mod test {
             ]),
             Ok(KodyNode::WhileStatement {
                 condition: Box::new(KodyNode::CallFunction {
-                    function: Box::new(KodyNode::GetVariable { name: String::from("check") }),
-                    arguments: vec![KodyNode::GetVariable { name: String::from("x") }],
+                    function: Box::new(KodyNode::GetVariable {
+                        name: String::from("check")
+                    }),
+                    arguments: vec![KodyNode::GetVariable {
+                        name: String::from("x")
+                    }],
                 }),
                 action: Box::new(KodyNode::CodeBlock {
                     statements: vec![
                         KodyNode::SetVariable {
-                            variable: Box::new(KodyNode::GetVariable { name: String::from("x") }),
+                            variable: Box::new(KodyNode::GetVariable {
+                                name: String::from("x")
+                            }),
                             value: Box::new(KodyNode::CallFunction {
-                                function: Box::new(KodyNode::GetVariable { name: String::from("__divide") }),
+                                function: Box::new(KodyNode::GetVariable {
+                                    name: String::from("__divide")
+                                }),
                                 arguments: vec![
-                                    KodyNode::GetVariable { name: String::from("x") },
-                                    KodyNode::GetVariable { name: String::from("y") }
+                                    KodyNode::GetVariable {
+                                        name: String::from("x")
+                                    },
+                                    KodyNode::GetVariable {
+                                        name: String::from("y")
+                                    }
                                 ]
                             })
                         },
                         KodyNode::SetVariable {
-                            variable: Box::new(KodyNode::GetVariable { name: String::from("y") }),
-                            value: Box::new(KodyNode::GetConstant { value: KodyObject::Number(String::from("2")) })
+                            variable: Box::new(KodyNode::GetVariable {
+                                name: String::from("y")
+                            }),
+                            value: Box::new(KodyNode::GetConstant {
+                                value: KodyObject::from(KodyValue::Number(String::from("2")))
+                            })
                         }
                     ]
                 })
