@@ -15,6 +15,26 @@ lazy_static! {
             "__less_than",
             KodyObject::from(KodyValue::NativeFunction(math::__less_than)),
         );
+        globals.insert(
+            "__greater_than",
+            KodyObject::from(KodyValue::NativeFunction(math::__greater_than)),
+        );
+        globals.insert(
+            "__less_than_or_equal",
+            KodyObject::from(KodyValue::NativeFunction(math::__less_than_or_equal)),
+        );
+        globals.insert(
+            "__greater_than_or_equal",
+            KodyObject::from(KodyValue::NativeFunction(math::__greater_than_or_equal)),
+        );
+        globals.insert(
+            "__add",
+            KodyObject::from(KodyValue::NativeFunction(math::__add)),
+        );
+        globals.insert(
+            "__multiply",
+            KodyObject::from(KodyValue::NativeFunction(math::__multiply)),
+        );
         globals
     };
 }

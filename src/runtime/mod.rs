@@ -10,7 +10,8 @@ pub fn execute(syntax_tree: &KodySyntaxTree) -> Result<KodyObject, String> {
     let mut variable_stack = VariableStack::new(syntax_tree.global_variables.clone()); // start with global variables
 
     execute_node(&syntax_tree.main, &mut variable_stack)?;
-    Ok(KodyObject::new())
+
+    Ok(variable_stack.return_value.unwrap_or_else(KodyObject::new))
 }
 
 struct VariableStack {
