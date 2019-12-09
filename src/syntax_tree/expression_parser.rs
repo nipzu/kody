@@ -1,5 +1,5 @@
 use super::{get_next_expression, identify_expressions, KodyNode};
-use crate::runtime::objects::{KodyObject, KodyValue};
+use crate::runtime::objects::{KodyNumber, KodyObject, KodyValue};
 use crate::tokenizer::Token;
 
 fn is_in_codeblock(tokens: &[Token], index: usize) -> bool {
@@ -124,8 +124,10 @@ fn check_value(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
             Token::StringLiteral(value) => KodyNode::GetConstant {
                 value: KodyObject::from(KodyValue::StringLiteral(value.clone())),
             },
-            Token::Number(value) => KodyNode::GetConstant {
-                value: KodyObject::from(KodyValue::Number(value.clone())),
+            Token::Number(val) => KodyNode::GetConstant {
+                value: KodyObject::from(KodyValue::Number(KodyNumber {
+                    value: val.parse().unwrap(),
+                })),
             },
             Token::True => KodyNode::GetConstant {
                 value: KodyObject::from(KodyValue::Bool(true)),

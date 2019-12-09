@@ -20,9 +20,14 @@ impl KodyObject {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct KodyNumber {
+    pub value: f64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum KodyValue {
     Bool(bool),
-    Number(String),
+    Number(KodyNumber),
     StringLiteral(String),
     Function(KodyFunctionData),
     NativeFunction(fn(Vec<KodyObject>) -> Result<KodyObject, String>),
