@@ -9,8 +9,8 @@ func fib(n) {
     a = 1
     b = 0
     while (i < n) {
-        print(pow(a))
         i += 1
+        print(i, ":", pow(a))
         tmp = b
         b = a
         a = b + tmp
