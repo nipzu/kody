@@ -1,3 +1,4 @@
+mod logic;
 mod math;
 
 use std::collections::HashMap;
@@ -27,6 +28,9 @@ lazy_static! {
         bind_function!(globals, "__multiply", math::__multiply);
         bind_function!(globals, "__divide", math::__divide);
         bind_function!(globals, "__negate", math::__negate);
+        bind_function!(globals, "__not", logic::__not);
+        bind_function!(globals, "__and", logic::__and);
+        bind_function!(globals, "__or", logic::__or);
         // TODO boolean operations
         globals
     };

@@ -653,7 +653,7 @@ mod test {
             Ok(KodyNode::IfStatement {
                 condition: Box::new(KodyNode::CallFunction {
                     function: Box::new(KodyNode::GetVariable {
-                        name: String::from("__equals")
+                        name: String::from("__equal")
                     }),
                     arguments: vec![
                         KodyNode::GetVariable {

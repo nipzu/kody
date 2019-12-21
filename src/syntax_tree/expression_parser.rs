@@ -433,8 +433,6 @@ pub fn parse_expression_tokens(tokens: &[Token]) -> Result<KodyNode, String> {
     assert!(!tokens.is_empty());
 
     for check in &[
-        check_parentheses,
-        check_codeblock,
         check_return,
         check_if_expression,
         check_while_expression,
@@ -447,6 +445,8 @@ pub fn parse_expression_tokens(tokens: &[Token]) -> Result<KodyNode, String> {
         check_or_operator,
         check_and_operator,
         check_not_operator,
+        check_parentheses,
+        check_codeblock,
         check_function_call_and_member_access,
     ] {
         match check(tokens) {
