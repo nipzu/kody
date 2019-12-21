@@ -205,8 +205,8 @@ fn check_comparison(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
         _ => false,
     }) {
         let function_name = match tokens[i] {
-            Token::Equals => "__equals",
-            Token::NotEqual => "__not_equals",
+            Token::Equals => "__equal",
+            Token::NotEqual => "__not_equal",
             Token::GreaterThan => "__greater_than",
             Token::GreaterThanOrEqual => "__greater_than_or_equal",
             Token::LessThan => "__less_than",
