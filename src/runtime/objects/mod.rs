@@ -1,5 +1,9 @@
 use crate::syntax_tree::KodyFunctionData;
 
+mod number;
+
+pub use number::KodyNumber;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct KodyObject {
     pub value: Box<KodyValue>,
@@ -17,11 +21,6 @@ impl KodyObject {
             value: Box::new(value),
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct KodyNumber {
-    pub value: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]

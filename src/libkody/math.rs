@@ -4,7 +4,7 @@ use crate::runtime::objects::{KodyNumber, KodyObject, KodyValue};
 
 fn modify_numbers(
     args: Vec<KodyObject>,
-    operation: fn(f64, f64) -> f64,
+    operation: fn(&KodyNumber, &KodyNumber) -> KodyNumber,
     operation_name: &str,
 ) -> Result<KodyObject, String> {
     if args.len() != 2 {
@@ -13,14 +13,9 @@ fn modify_numbers(
             operation_name
         ));
     }
-    match (*args[0].value.clone(), *args[1].value.clone()) {
-        (
-            KodyValue::Number(KodyNumber { value: val1 }),
-            KodyValue::Number(KodyNumber { value: val2 }),
-        ) => Ok(KodyObject {
-            value: Box::new(KodyValue::Number(KodyNumber {
-                value: operation(val1, val2),
-            })),
+    match (args[0].value.as_ref(), args[1].value.as_ref()) {
+        (KodyValue::Number(val1), KodyValue::Number(val2)) => Ok(KodyObject {
+            value: Box::new(KodyValue::Number(operation(val1, val2))),
         }),
         _ => Err(format!(
             "Cannot {} two objects other than numbers!",
@@ -49,9 +44,9 @@ pub fn __negate(args: Vec<KodyObject>) -> Result<KodyObject, String> {
     if args.len() != 1 {
         return Err(String::from("Cannot negate other than one argument"));
     }
-    match *args[0].value.clone() {
-        KodyValue::Number(KodyNumber { value: val }) => Ok(KodyObject {
-            value: Box::new(KodyValue::Number(KodyNumber { value: -val })),
+    match args[0].value.as_ref() {
+        KodyValue::Number(val) => Ok(KodyObject {
+            value: Box::new(KodyValue::Number(-val)),
         }),
         _ => Err(String::from("Cannot negate an object other than a number!")),
     }
@@ -63,11 +58,8 @@ fn compare_numbers(args: Vec<KodyObject>) -> Result<Ordering, String> {
             "Attempting to compare objects other then two objects!",
         ));
     }
-    match (*args[0].value.clone(), *args[1].value.clone()) {
-        (
-            KodyValue::Number(KodyNumber { value: val1 }),
-            KodyValue::Number(KodyNumber { value: val2 }),
-        ) => Ok(val1.partial_cmp(&val2).unwrap()),
+    match (args[0].value.as_ref(), args[1].value.as_ref()) {
+        (KodyValue::Number(val1), KodyValue::Number(val2)) => Ok(val1.cmp(&val2)),
         _ => Err(String::from(
             "Cannot compare two objects other than numbers!",
         )),

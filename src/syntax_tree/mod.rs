@@ -383,18 +383,14 @@ mod test {
                     }),
                     arguments: vec![
                         KodyNode::GetConstant {
-                            value: KodyObject::from(KodyValue::Number(KodyNumber {
-                                value: "3".parse().unwrap()
-                            }))
+                            value: KodyObject::from(KodyValue::Number(KodyNumber::from_int(3)))
                         },
                         KodyNode::CallFunction {
                             function: Box::new(KodyNode::GetVariable {
                                 name: String::from("__negate")
                             }),
                             arguments: vec![KodyNode::GetConstant {
-                                value: KodyObject::from(KodyValue::Number(KodyNumber {
-                                    value: "5".parse().unwrap()
-                                }))
+                                value: KodyObject::from(KodyValue::Number(KodyNumber::from_int(5)))
                             }]
                         }
                     ]
@@ -413,14 +409,10 @@ mod test {
                 }),
                 arguments: vec![
                     KodyNode::GetConstant {
-                        value: KodyObject::from(KodyValue::Number(KodyNumber {
-                            value: "5".parse().unwrap()
-                        }))
+                        value: KodyObject::from(KodyValue::Number(KodyNumber::from_int(5)))
                     },
                     KodyNode::GetConstant {
-                        value: KodyObject::from(KodyValue::Number(KodyNumber {
-                            value: "3".parse().unwrap()
-                        }))
+                        value: KodyObject::from(KodyValue::Number(KodyNumber::from_int(3)))
                     }
                 ]
             })
@@ -455,9 +447,7 @@ mod test {
                             name: String::from("y")
                         },
                         KodyNode::GetConstant {
-                            value: KodyObject::from(KodyValue::Number(KodyNumber {
-                                value: "1".parse().unwrap()
-                            }))
+                            value: KodyObject::from(KodyValue::Number(KodyNumber::from_int(1)))
                         },
                     ]
                 })
@@ -488,14 +478,10 @@ mod test {
                         }),
                         arguments: vec![
                             KodyNode::GetConstant {
-                                value: KodyObject::from(KodyValue::Number(KodyNumber {
-                                    value: "1".parse().unwrap()
-                                }))
+                                value: KodyObject::from(KodyValue::Number(KodyNumber::from_int(1)))
                             },
                             KodyNode::GetConstant {
-                                value: KodyObject::from(KodyValue::Number(KodyNumber {
-                                    value: "2".parse().unwrap()
-                                }))
+                                value: KodyObject::from(KodyValue::Number(KodyNumber::from_int(2)))
                             }
                         ]
                     },
@@ -530,9 +516,7 @@ mod test {
                         }),
                         arguments: vec![
                             KodyNode::GetConstant {
-                                value: KodyObject::from(KodyValue::Number(KodyNumber {
-                                    value: "2".parse().unwrap()
-                                }))
+                                value: KodyObject::from(KodyValue::Number(KodyNumber::from_int(2)))
                             },
                             KodyNode::GetVariable {
                                 name: String::from("b")
@@ -576,9 +560,9 @@ mod test {
                                 KodyNode::SetVariable {
                                     name: String::from("a"),
                                     value: Box::new(KodyNode::GetConstant {
-                                        value: KodyObject::from(KodyValue::Number(KodyNumber {
-                                            value: "5".parse().unwrap()
-                                        }))
+                                        value: KodyObject::from(KodyValue::Number(
+                                            KodyNumber::from_int(5)
+                                        ))
                                     })
                                 },
                                 KodyNode::GetVariable {
@@ -660,9 +644,7 @@ mod test {
                             name: String::from("y")
                         },
                         KodyNode::GetConstant {
-                            value: KodyObject::from(KodyValue::Number(KodyNumber {
-                                value: "1".parse().unwrap()
-                            }))
+                            value: KodyObject::from(KodyValue::Number(KodyNumber::from_int(1)))
                         }
                     ]
                 }),
@@ -723,9 +705,7 @@ mod test {
                         KodyNode::SetVariable {
                             name: String::from("y"),
                             value: Box::new(KodyNode::GetConstant {
-                                value: KodyObject::from(KodyValue::Number(KodyNumber {
-                                    value: "2".parse().unwrap()
-                                }))
+                                value: KodyObject::from(KodyValue::Number(KodyNumber::from_int(2)))
                             })
                         }
                     ]

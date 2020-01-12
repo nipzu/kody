@@ -1,0 +1,13 @@
+a=5295
+b=2457
+
+while b > 0 {
+    while a >= b {
+        a -= b
+    }
+    tmp = a
+    a = b
+    b = tmp
+}
+
+print(a)

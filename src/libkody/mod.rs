@@ -46,7 +46,7 @@ fn __print(args: Vec<KodyObject>) -> Result<KodyObject, String> {
         }
         match *arg.value {
             KodyValue::StringLiteral(val) => print!("{}", val),
-            KodyValue::Number(obj) => print!("{}", obj.value),
+            KodyValue::Number(val) => print!("{}", val),
             KodyValue::Bool(val) => print!("{}", val),
             _ => print!("{:?}", arg.value),
         }
