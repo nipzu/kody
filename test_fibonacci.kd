@@ -6,11 +6,11 @@ func pow(n) {
 
 func fib(n) {
     i = 0
-    a = 1
+    a = 1.2
     b = 0
     while (i < n) {
         i += 1
-        print(i, ":", pow(a))
+        print(i, ":", pow(b))
         tmp = b
         b = a
         a = b + tmp

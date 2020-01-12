@@ -28,7 +28,7 @@ impl KodyNumber {
         let is_negative = x < 0.0;
         let mut num = x.abs();
         let mut denominator = 1_u128;
-        while num < u64::MAX as f64 && denominator < u64::MAX as u128 {
+        while 2.0*num < u64::MAX as f64 && 2*denominator < u64::MAX as u128 {
             num *= 2.0;
             denominator *= 2;
         }

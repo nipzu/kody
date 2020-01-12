@@ -126,7 +126,7 @@ fn check_value(tokens: &[Token]) -> Result<Option<KodyNode>, String> {
             },
             Token::Number(val) => KodyNode::GetConstant {
                 value: KodyObject::from(KodyValue::Number(if val.contains('.') {
-                    todo!()
+                    KodyNumber::from_float(val.parse().unwrap())
                 } else {
                     KodyNumber::from_int(val.parse().unwrap())
                 })),
