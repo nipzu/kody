@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::{fmt, ops, u64};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct KodyNumber {
     numerator: u128,
     denominator: u128,
@@ -153,14 +153,6 @@ impl Ord for KodyNumber {
 impl PartialOrd for KodyNumber {
     fn partial_cmp(&self, other: &KodyNumber) -> Option<Ordering> {
         Some(self.cmp(other))
-    }
-}
-
-impl Eq for KodyNumber {}
-
-impl PartialEq for KodyNumber {
-    fn eq(&self, other: &KodyNumber) -> bool {
-        self.denominator == other.denominator && self.numerator == other.numerator
     }
 }
 
