@@ -38,7 +38,9 @@ pub fn run(arguments: &Arguments) -> Result<(), String> {
 
     let end_time = Instant::now();
 
-    println!("Time elapsed: {} µs", (end_time - start_time).as_micros());
+    if arguments.is_verbose {
+        println!("Time elapsed: {} µs", (end_time - start_time).as_micros());
+    }
 
     Ok(())
 }

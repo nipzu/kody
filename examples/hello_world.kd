@@ -1,7 +1,7 @@
-h = "Hello"
+h = "Hello "
 w = "World"
 n = 11
-f = "\U+1F603"
+f = "\U+1F600"
 
 func print2(a, b) {
     print(a)

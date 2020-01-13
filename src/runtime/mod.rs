@@ -7,7 +7,8 @@ use crate::syntax_tree::{KodyNode, KodySyntaxTree};
 use objects::{KodyObject, KodyValue};
 
 pub fn execute(syntax_tree: &KodySyntaxTree) -> Result<KodyObject, String> {
-    let mut variable_stack = VariableStack::new(syntax_tree.global_variables.clone()); // start with global variables
+    // start with global variables
+    let mut variable_stack = VariableStack::new(syntax_tree.global_variables.clone()); 
 
     execute_node(&syntax_tree.main, &mut variable_stack)?;
 
@@ -16,9 +17,9 @@ pub fn execute(syntax_tree: &KodySyntaxTree) -> Result<KodyObject, String> {
 
 struct VariableStack {
     closures: Vec<HashMap<String, KodyObject>>,
-    return_value: Option<KodyObject>,
     // this will be set to Some(value) when a function returns
-    // and then passed through
+    // and then passed through the stack
+    return_value: Option<KodyObject>,
 }
 
 impl VariableStack {
@@ -107,13 +108,16 @@ fn execute_codeblock(
     statements: &[KodyNode],
     variable_stack: &mut VariableStack,
 ) -> Result<KodyObject, String> {
-    variable_stack.open_closure(); // add a new closure
+    // add a new closure
+    variable_stack.open_closure(); 
 
+    // execute every statement
     for statement in statements {
-        execute_node(statement, variable_stack)?; // execute every statement
+        execute_node(statement, variable_stack)?; 
     }
 
-    variable_stack.close_closure(); // delete variables from closure
+    // delete variables from closure
+    variable_stack.close_closure(); 
     Ok(KodyObject::new())
 }
 

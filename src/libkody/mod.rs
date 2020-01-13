@@ -5,45 +5,38 @@ use std::collections::HashMap;
 
 use crate::runtime::objects::{KodyObject, KodyValue};
 
-// This be hella hacked together
-macro_rules! bind_function {
-    ($x:ident, $y:expr, $z:expr) => {
-        $x.insert($y, KodyObject::from(KodyValue::NativeFunction($z)))
-    };
-}
-
 // GLOBALS contains all globally available functions
 lazy_static! {
     pub static ref GLOBALS: HashMap<&'static str, KodyObject> = {
-        let mut globals = HashMap::new();
-        bind_function!(globals, "print", __print);
-        bind_function!(globals, "__equal", math::__equal);
-        bind_function!(globals, "__not_equal", math::__not_equal);
-        bind_function!(globals, "__less_than", math::__less_than);
-        bind_function!(globals, "__less_than_or_equal", math::__less_or_equal);
-        bind_function!(globals, "__greater_than", math::__greater_than);
-        bind_function!(globals, "__greater_than_or_equal", math::__greater_or_equal);
-        bind_function!(globals, "__add", math::__add);
-        bind_function!(globals, "__subtract", math::__subtract);
-        bind_function!(globals, "__multiply", math::__multiply);
-        bind_function!(globals, "__divide", math::__divide);
-        bind_function!(globals, "__negate", math::__negate);
-        bind_function!(globals, "__not", logic::__not);
-        bind_function!(globals, "__and", logic::__and);
-        bind_function!(globals, "__or", logic::__or);
-        // TODO boolean operations
-        globals
+        [
+            // the as fn(..) -> Result<..> is there to stop an error
+            (
+                "print",
+                __print as fn(Vec<KodyObject>) -> Result<KodyObject, String>,
+            ),
+            ("__equal", math::__equal),
+            ("__not_equal", math::__not_equal),
+            ("__less_than", math::__less_than),
+            ("__less_than_or_equal", math::__less_or_equal),
+            ("__greater_than", math::__greater_than),
+            ("__greater_than_or_equal", math::__greater_or_equal),
+            ("__add", math::__add),
+            ("__subtract", math::__subtract),
+            ("__multiply", math::__multiply),
+            ("__divide", math::__divide),
+            ("__negate", math::__negate),
+            ("__not", logic::__not),
+            ("__and", logic::__and),
+            ("__or", logic::__or),
+        ]
+        .iter()
+        .map(|(name, func)| (*name, KodyObject::from(KodyValue::NativeFunction(*func))))
+        .collect()
     };
 }
 
 fn __print(args: Vec<KodyObject>) -> Result<KodyObject, String> {
-    let mut gap = false;
     for arg in args {
-        if gap {
-            print!(" ");
-        } else {
-            gap = true;
-        }
         match *arg.value {
             KodyValue::StringLiteral(val) => print!("{}", val),
             KodyValue::Number(val) => print!("{}", val),
