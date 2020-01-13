@@ -1,16 +1,12 @@
-n = 10
-
-func pow(n) {
-    return n*n
-}
+n = 20
 
 func fib(n) {
     i = 0
-    a = 1.2
+    a = 1
     b = 0
     while (i < n) {
         i += 1
-        print(i, ":", pow(b))
+        print(i, ":", b)
         tmp = b
         b = a
         a = b + tmp

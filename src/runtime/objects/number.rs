@@ -28,7 +28,7 @@ impl KodyNumber {
         let is_negative = x < 0.0;
         let mut num = x.abs();
         let mut denominator = 1_u128;
-        while 2.0*num < u64::MAX as f64 && 2*denominator < u64::MAX as u128 {
+        while 2.0 * num < u64::MAX as f64 && 2 * denominator < u64::MAX as u128 {
             num *= 2.0;
             denominator *= 2;
         }
@@ -44,7 +44,9 @@ impl KodyNumber {
         self.numerator /= gcd;
         self.denominator /= gcd;
 
-        while self.numerator > u64::MAX as u128 || self.denominator > u64::MAX as u128 {
+        while (self.numerator > u64::MAX as u128 || self.denominator > u64::MAX as u128)
+            && self.denominator > 1
+        {
             self.numerator /= 2;
             self.denominator /= 2;
         }
@@ -127,10 +129,16 @@ impl ops::Neg for &KodyNumber {
 
 impl fmt::Display for KodyNumber {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let sign = if self.is_negative { "-" } else { "" };
         if self.denominator == 1 {
-            write!(f, "{}", self.numerator)
+            write!(f, "{}{}", sign, self.numerator)
         } else {
-            write!(f, "{}", self.numerator as f64 / self.denominator as f64)
+            write!(
+                f,
+                "{}{}",
+                sign,
+                self.numerator as f64 / self.denominator as f64
+            )
         }
     }
 }
